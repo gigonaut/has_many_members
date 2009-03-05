@@ -17,17 +17,29 @@ module HasManyMembers
         
         after_create :adminify_creator
 
-        def self.find_for_member(member, status="all", member_type="all")
-          
-          self.find(:all, :joins => :memberships, :conditions => {:memberships => {:member_id => member.id, :member_type => member_type, :status => status}})
+        def self.find_for_member(member, status=nil, member_types=[])
+          unless member_types.is_a? Array
+            member_types = [member_types]
+          end
+          if !(status.nil? && member_types.empty?)
+            self.find(:all, :joins => :memberships, :conditions => {:memberships => {:member_id => member.id, :member_type => member_types.join(" OR "), :status => status}})
+          elsif status.nil?
+            self.find(:all, :joins => :memberships, :conditions => {:memberships => {:member_id => member.id, :member_type => member_types.join(" OR ")}})
+          elsif member_types.empty?
+            self.find(:all, :joins => :memberships, :conditions => {:memberships => {:member_id => member.id, :status => status}})
+          end
         end
         
         def self.find_admin(member)
-          self.find_for_member(member, "admin")
+          self.find_for_member(member, "active", "admin")
         end
         
         def self.find_active(member)
-          self.find_for_member(member, "active")
+          self.find_for_member(member, "active", ["user", "admin"])
+        end
+        
+        def self.find_default(member)
+          self.find_for_member(member, "active", ["user", "admin"]).first
         end
         
         def self.find_invited(member)
@@ -39,7 +51,7 @@ module HasManyMembers
         end
         
         def self.find_any_for(member)
-          self.find_for_member(member, ["admin", "active", "requested", "invited"])
+          self.find_for_member(member, nil, ["admin", "active", "requested", "invited"])
         end
 
         
@@ -116,47 +128,55 @@ module HasManyMembers
         make_membership(member, "admin").save
       end
       
+      def make_default(member)
+        make_membership(member, "admin", "active", true)
+      end
+      
+      def make_default!(member)
+        make_default(member).save
+      end
+      
       def demote_admin(member)
-        membership_for(member).update_attributes({:member_type => "active"})
+        membership_for(member).update_attributes({:member_type => "user"})
       end
       
       def invite_member(member)
-        make_membership(member, "invited")
+        make_membership(member, "user", "invited")
       end
       
       def invite_member!(member)
-        make_membership(member, "invited").save
+        make_membership(member, "user", "invited").save
       end
       
       def send_request(member)
-        make_membership(member, "requested")
+        make_membership(member, "user", "requested")
       end
       
       def send_request!(member)
-        make_membership(member, "requested").save
+        make_membership(member, "user", "requested").save
       end
       
       def accept_member(member)
-        membership_for(member).update_attributes({:member_type => "active"})
+        membership_for(member).update_attributes({:status => "active"})
       end
       
       def decline_member(member)
         membership_for(member).destroy
       end
       
-      def make_membership(member, status="active")
+      def make_membership(member, member_type="user", status="active", default=false)
         if membership_for(member).nil?
-          memberships.build({:member_id => member.id, :member_type => status})
+          memberships.build({:member_id => member.id, :member_type => member_type, :status => status, :default_membership => default})
         else
           return_val = membership_for(member)
-          unless return_val.member_type =="active" || return_val.member_type == "admin"
-            return_val.member_type = status
-          end
+          return_val.member_type = member_type
+          return_val.status = status
+          return_val.default_membership = default
           return_val
         end
       end
       
-      def make_membership!(member, status="active")
+      def make_membership!(member, member_type="user", status="active")
         make_membership(member, status).save
       end
       

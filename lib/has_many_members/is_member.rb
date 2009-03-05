@@ -8,6 +8,13 @@ module IsMember
       
       def is_member(options={})
         has_many :memberships, :foreign_key => :member_id
+        options[:of].each do |thing|
+          has_many thing, :through => :memberships, :as => :joinable, :source_type => thing.to_s.capitalize.singularize, :source => :joinable do
+            def default
+              find(:first, :conditions => ["memberships.default_membership=?", true])
+            end
+          end
+        end
         
         include IsMember::InstanceMethods
       end

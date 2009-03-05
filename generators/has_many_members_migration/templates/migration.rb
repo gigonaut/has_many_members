@@ -8,7 +8,7 @@ class HasManyMembersMigration < ActiveRecord::Migration
       t.integer :role_id
       t.string :member_type
       t.string :status, :default => "active"
-
+      t.boolean :default_membership, :default => false
       t.timestamps
     end
   end
