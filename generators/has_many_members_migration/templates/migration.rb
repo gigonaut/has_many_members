@@ -1,4 +1,4 @@
-class HasManyMembershipsMigration < ActiveRecord::Migration
+class HasManyMembersMigration < ActiveRecord::Migration
   def self.up
     create_table :memberships do |t|
       t.integer :member_id

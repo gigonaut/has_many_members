@@ -8,7 +8,7 @@ class Membership < ActiveRecord::Base
   validates_presence_of :status
   validates_presence_of :member_type
   
-  before_save :do_defaults
+  before_save :do_membership_type
   
   def member_parent
     joinable_type.to_s.constantize.find(joinable_id)
@@ -20,6 +20,7 @@ class Membership < ActiveRecord::Base
     end
     if status.blank?
       write_attribute(:active)
+    end
   end
   
 end
