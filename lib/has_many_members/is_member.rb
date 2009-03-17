@@ -11,7 +11,7 @@ module IsMember
         options[:of].each do |thing|
           has_many thing, :through => :memberships, :as => :joinable, :source_type => thing.to_s.capitalize.singularize, :source => :joinable do
             def default
-              find(:first, :conditions => ["memberships.default_membership=?", true])
+              find(:first, :conditions => ["memberships.default_membership=?", true]) || find(:first, :conditions => ["memberships.member_type=?", "admin"])
             end
           end
         end

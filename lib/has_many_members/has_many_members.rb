@@ -73,8 +73,6 @@ module HasManyMembers
       def editable_by?(member)
         if member.has_role?(:admin)
           true
-        elsif self.creator_id == member.id
-          true
         elsif active_members.include? member
           true
         else
